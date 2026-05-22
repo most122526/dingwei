@@ -2,633 +2,895 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>宠物定位追踪器 | NB-IoT智能项圈</title>
-    <!-- 高德地图 JS API -->
-    <script src="https://webapi.amap.com/maps?v=2.0&key=6d2f2e12162bdea11ad316ecd445ebe4"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover, maximum-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <title>江理工 · 宠物定位系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        :root {
+            --bg: #0f1722;
+            --card: #1a2332;
+            --accent: #4ea8de;
+            --green: #10b981;
+            --red: #ef4444;
+            --amber: #f59e0b;
+            --text: #e8ecf2;
+            --text2: #94a3b8;
+            --border: #2d3848;
+            --shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        }
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
-
         body {
-            background: linear-gradient(145deg, #e0f0e8 0%, #c2dfd4 100%);
-            font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, sans-serif;
-            padding: 20px 16px 40px;
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 30% 10%, #1b2535, #0a0f18);
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
         }
-
-        /* 手机卡片容器 */
-        .phone-app {
-            max-width: 480px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(10px);
-            border-radius: 48px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255,255,255,0.6);
-            overflow: hidden;
-            padding: 20px 18px 30px;
-            border: 1px solid rgba(255,255,255,0.5);
+        .phone {
+            max-width: 420px;
+            width: 100%;
+            background: var(--bg);
+            border-radius: 44px;
+            padding: 14px 12px 18px;
+            box-shadow: 0 25px 55px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+            border: 2px solid #3b4858;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 95vh;
+            overflow-y: auto;
         }
-
-        h1 {
-            font-size: 1.6rem;
-            font-weight: 600;
-            background: linear-gradient(135deg, #1f6e5c, #2a9d8f);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-align: center;
-            letter-spacing: -0.3px;
-        }
-
-        .sub {
-            text-align: center;
-            color: #6b8f82;
-            font-size: 0.75rem;
-            margin-top: 4px;
-            margin-bottom: 20px;
-        }
-
-        /* 状态栏 */
         .status-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0,0,0,0.05);
-            border-radius: 60px;
+            background: #18202c;
+            border-radius: 28px;
             padding: 8px 16px;
-            margin-bottom: 20px;
-            font-size: 0.7rem;
-            font-weight: 500;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border: 1px solid #2d3848;
         }
-        .device-status {
-            background: #e0e7ff;
-            padding: 4px 14px;
-            border-radius: 40px;
-            color: #1e3a8a;
-        }
-        .device-status.online {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        .battery, .signal {
+        .network-group {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
-
-        /* 连接步骤指示器 */
-        .step-indicator {
+        .signal-bars {
             display: flex;
-            gap: 12px;
-            margin: 20px 0 16px;
+            align-items: flex-end;
+            gap: 2px;
+            height: 14px;
         }
-        .step {
-            flex: 1;
-            text-align: center;
-            padding: 8px 4px;
-            background: #eef3f1;
-            border-radius: 60px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: #5f8b7c;
+        .signal-bar {
+            width: 3px;
+            background: #4a5a6e;
+            border-radius: 1px;
         }
-        .step.active {
-            background: #2c7a6e;
-            color: white;
-            box-shadow: 0 2px 8px rgba(44,122,110,0.3);
+        .signal-bar.active {
+            background: #10b981;
         }
-
-        /* 按钮 */
-        .btn {
-            background: #2c7a6e;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 60px;
-            color: white;
-            font-weight: 600;
-            font-size: 0.9rem;
-            width: 100%;
-            cursor: pointer;
-            transition: 0.2s;
-            text-align: center;
+        .signal-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4a5a6e;
+            margin-left: 6px;
         }
-        .btn-secondary {
-            background: #e67e22;
+        .signal-dot.online {
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse 1.5s infinite;
         }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #2c7a6e;
-            color: #2c7a6e;
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
         }
-        .btn-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 12px;
-        }
-        .btn-group .btn {
-            flex: 1;
-        }
-
-        /* 进度模拟区 */
-        .progress-panel {
-            background: #eef3f1;
-            border-radius: 28px;
-            padding: 16px;
-            margin-top: 16px;
-        }
-        .progress-text {
-            font-weight: 600;
-            color: #1f6e5c;
-            margin-bottom: 8px;
-        }
-        .progress-sub {
-            font-size: 0.7rem;
-            color: #6b8f82;
-        }
-
-        /* 地图容器 */
-        .map-container {
-            width: 100%;
-            height: 340px;
-            border-radius: 32px;
-            overflow: hidden;
-            margin: 16px 0;
-            border: 2px solid white;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-        }
-
-        /* 信息卡片 */
-        .info-card {
-            background: #f8fafc;
-            border-radius: 24px;
-            padding: 12px 16px;
-            margin: 12px 0;
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            margin-bottom: 6px;
-        }
-
-        /* 日志区域 */
-        .log-area {
-            background: #1e2a2e;
-            border-radius: 24px;
-            padding: 12px;
-            height: 120px;
-            overflow-y: auto;
+        .clock {
             font-family: monospace;
-            font-size: 0.7rem;
-            color: #b3ffe6;
-            margin-top: 16px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #cbd5e1;
         }
-        .log-line {
-            border-bottom: 1px solid #2e4a4a;
-            padding: 4px 0;
+        .btn {
+            background: #253040;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.68rem;
+            color: #e2e8f0;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid #3e4b5c;
+            transition: 0.15s;
+            white-space: nowrap;
         }
-
-        .hidden {
-            display: none;
+        .btn:active {
+            transform: scale(0.95);
+            background: #334050;
         }
-
-        /* 低功耗提示弹窗 */
-        .modal-mask {
-            position: fixed;
-            top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(5px);
+        .btn-alert {
+            background: #b91c1c;
+            border-color: #dc2626;
+            color: #fff;
+            font-weight: 700;
+        }
+        .btn-sleep {
+            background: #6366f1;
+            border-color: #818cf8;
+            color: #fff;
+            font-weight: 700;
+        }
+        .btn-connect {
+            background: #1e6b4e;
+            border-color: #10b981;
+            color: #fff;
+            font-weight: 700;
+        }
+        .btn-scan {
+            background: #1e4d80;
+            border-color: #3b82c4;
+            color: #fff;
+            font-weight: 700;
+        }
+        .map-container {
+            flex: 1;
+            min-height: 280px;
+            height: 280px;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 2px solid #2d3848;
+            position: relative;
+            background: #0a0f18;
+        }
+        #amapContainer {
+            width: 100%;
+            height: 100%;
+            min-height: 276px;
+        }
+        .map-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #8899aa;
+            font-size: 0.85rem;
+            font-weight: 600;
+            z-index: 10;
+            text-align: center;
+            pointer-events: none;
+            background: rgba(10, 15, 24, 0.85);
+            padding: 10px 16px;
+            border-radius: 12px;
+        }
+        .connection-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 15, 24, 0.94);
+            backdrop-filter: blur(12px);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 2000;
+            z-index: 20;
+            border-radius: 24px;
+            transition: opacity 0.4s;
         }
-        .modal-card {
-            background: white;
-            border-radius: 48px;
-            padding: 24px;
-            width: 280px;
+        .connection-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .device-list {
+            background: #0f1722;
+            border: 1px solid #2d3848;
+            border-radius: 16px;
+            padding: 12px;
+            margin: 12px 0;
+            width: 80%;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .device-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            border-bottom: 1px solid #1e2a35;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .device-item:hover {
+            background: #1a2532;
+        }
+        .device-item.selected {
+            background: #1a3a2a;
+            border-left: 3px solid #10b981;
+        }
+        .nbiot-ring {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 4px solid #2d3848;
+            border-top-color: #4ea8de;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 12px;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .connect-text {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #4ea8de;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .info-card {
+            background: var(--card);
+            border-radius: 18px;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .info-icon {
+            font-size: 1.6rem;
+        }
+        .info-content {
+            flex: 1;
+        }
+        .info-label {
+            font-size: 0.62rem;
+            color: var(--text2);
+        }
+        .info-value {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .device-panel {
+            background: var(--card);
+            border-radius: 18px;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .device-name {
+            font-weight: 700;
+            font-size: 0.75rem;
+        }
+        .device-meta {
+            font-size: 0.6rem;
+            color: var(--text2);
+        }
+        .status-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.6rem;
+            font-weight: 600;
+        }
+        .tag-online {
+            background: #0a2e1a;
+            color: #6ee7b7;
+            border: 1px solid #10b981;
+        }
+        .tag-moving {
+            background: #2a1a0a;
+            color: #fdba74;
+            border: 1px solid #f97316;
+        }
+        .tag-standby {
+            background: #1a1a2a;
+            color: #a5b4fc;
+            border: 1px solid #6366f1;
+        }
+        .power-save-banner {
+            background: #2a1a1a;
+            border: 2px solid #ef4444;
+            border-radius: 16px;
+            padding: 10px 14px;
             text-align: center;
+            font-weight: 700;
+            font-size: 0.7rem;
+            color: #fca5a5;
+            display: none;
+            animation: fadeIn 0.3s;
         }
-        .modal-card p {
-            margin: 16px 0;
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .modal-btn {
-            background: #2c7a6e;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 40px;
-            color: white;
-            font-weight: bold;
+        .log-box {
+            background: #0c1119;
+            border-radius: 14px;
+            padding: 7px 10px;
+            height: 55px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.55rem;
+            color: #7a8d9a;
+            border: 1px solid #1e2a35;
+        }
+        .log-entry {
+            border-bottom: 1px solid #1a2430;
+            padding: 2px 0;
+        }
+        .log-entry.tx {
+            color: #fbbf24;
+        }
+        .log-entry.rx {
+            color: #10b981;
+        }
+        .control-row {
+            display: flex;
+            gap: 8px;
+        }
+        .control-row .btn {
+            flex: 1;
+            justify-content: center;
+        }
+        .settings-panel {
+            background: var(--card);
+            border-radius: 18px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .settings-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.65rem;
+            color: var(--text2);
+        }
+        .settings-row input {
+            flex: 1;
+            background: #0f1722;
+            border: 1px solid #2d3848;
+            color: #e8ecf2;
+            padding: 6px 10px;
+            border-radius: 12px;
+            font-size: 0.6rem;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
-<div class="phone-app" id="app">
-    <h1>🐾 宠物定位追踪器</h1>
-    <div class="sub">NB-IoT 智能项圈 · 实时守护</div>
+    <div class="phone">
+        <div class="status-bar">
+            <div class="network-group">
+                <div class="signal-bars" id="signalBars">
+                    <div class="signal-bar" style="height:4px;"></div>
+                    <div class="signal-bar" style="height:7px;"></div>
+                    <div class="signal-bar active" style="height:10px;"></div>
+                    <div class="signal-bar active" style="height:13px;"></div>
+                </div>
+                <div class="signal-dot" id="signalDot"></div>
+                <span id="networkLabel" style="font-size:0.7rem;">NBIOT</span>
+            </div>
+            <div class="clock" id="liveClock">--:--:--</div>
+        </div>
 
-    <!-- 状态栏 -->
-    <div class="status-bar">
-        <div class="device-status" id="deviceStatus">⚪ 未连接</div>
-        <div class="battery" id="batteryInfo">🔋 --%</div>
-        <div class="signal" id="signalInfo">📶 --dBm</div>
+        <div class="settings-panel">
+            <div style="font-weight:700; font-size:0.7rem; color:#4ea8de;">🔑 高德地图API Key（可修改）</div>
+            <div class="settings-row">
+                <span>Key:</span>
+                <input type="text" id="amapKeyInput" value="6d2f2e12162bdea11ad316ecd445ebe4" placeholder="高德Web端JS API Key">
+            </div>
+            <div class="settings-row">
+                <span>秘钥:</span>
+                <input type="text" id="amapSecretInput" value="7ea6cc8dad3a9af11642f487735e0766" placeholder="高德安全密钥(jscode)">
+            </div>
+            <button class="btn btn-scan" id="applyKeyBtn" style="justify-content:center;"><i class="fas fa-check"></i> 重新加载地图</button>
+        </div>
+
+        <div class="map-container" id="mapWrapper">
+            <div id="amapContainer"></div>
+            <div class="map-placeholder" id="mapPlaceholder">📍 地图加载中，请稍候...</div>
+            <div class="connection-overlay" id="connectionPanel">
+                <div id="stepScan" style="display:flex; flex-direction:column; align-items:center; width:100%;">
+                    <div class="connect-text">第一步：搜索基站设备</div>
+                    <div style="font-size:0.6rem; color:#5a6a7a; margin:6px 0;">找到目标NB-IoT终端后选择</div>
+                    <button class="btn btn-scan" id="scanBtn"><i class="fas fa-search"></i> 搜索设备</button>
+                    <div class="device-list" id="deviceList" style="display:none;"></div>
+                </div>
+                <div id="stepConnect" style="display:none; flex-direction:column; align-items:center; width:100%;">
+                    <div class="connect-text">第二步：建立安全信道</div>
+                    <div style="font-size:0.6rem; color:#5a6a7a; margin:6px 0;">已选择: <span id="selectedDeviceName">---</span></div>
+                    <button class="btn btn-connect" id="connectBtn"><i class="fas fa-link"></i> 连接</button>
+                </div>
+                <div id="stepProgress" style="display:none; flex-direction:column; align-items:center; width:100%;">
+                    <div class="nbiot-ring"></div>
+                    <div class="connect-text" id="progressText">正在注册NB网络...</div>
+                    <div style="font-size:0.6rem; color:#5a6a7a; margin-top:4px;" id="progressSub"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-icon">📍</div>
+                <div class="info-content">
+                    <div class="info-label">经度 / 纬度</div>
+                    <div class="info-value" id="coordDisplay">--, --</div>
+                </div>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">⏱️</div>
+                <div class="info-content">
+                    <div class="info-label">最后更新</div>
+                    <div class="info-value" id="updateTimeDisplay">--:--:--</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="device-panel">
+            <div>
+                <div class="device-name">🐕 宠物定位终端</div>
+                <div class="device-meta">NB-IoT · 信号 <span id="rssiValue">--</span> dBm</div>
+            </div>
+            <div style="text-align:right;">
+                <span class="status-tag tag-standby" id="deviceStatusTag">离线</span>
+                <div style="font-size:0.6rem; color:#94a3b8; margin-top:2px;">🔋 <span id="batteryLevel">--</span>%</div>
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span>移动状态: <span class="status-tag tag-standby" id="moveStatusTag">未知</span></span>
+            <button class="btn" id="refreshBtn" style="background:#1e5a40; border-color:#10b981;"><i class="fas fa-sync-alt"></i> 刷新界面</button>
+        </div>
+
+        <div class="power-save-banner" id="powerSaveTip">⚠️ 30秒无操作，设备进入低功耗模式 (已下发A)</div>
+
+        <div class="control-row">
+            <button class="btn btn-sleep" id="sleepBtn"><i class="fas fa-moon"></i> 低功耗 (A)</button>
+            <button class="btn btn-alert" id="alertBtn"><i class="fas fa-exclamation-triangle"></i> 远程报警 (B)</button>
+        </div>
+
+        <div class="log-box" id="sysLog">🐾 系统启动中…</div>
     </div>
 
-    <!-- 连接步骤模拟 -->
-    <div class="step-indicator" id="stepIndicator">
-        <div class="step active" id="stepScan">1️⃣ 扫描终端</div>
-        <div class="step" id="stepConnect">2️⃣ 建立链路</div>
-        <div class="step" id="stepProgress">3️⃣ 激活数据</div>
-    </div>
+    <script>
+        (function() {
+            // ==================== 配置 ====================
+            const TARGET_DEVICE_NAME = 'BT_ECB1A5B055A4';
+            const SERVICE_UUID = '0000fff0-0000-1000-8000-00805f9b34fb';
+            const NOTIFY_UUID = '0000fff1-0000-1000-8000-00805f9b34fb';
+            const WRITE_UUID = '0000fff1-0000-1000-8000-00805f9b34fb';
 
-    <!-- 主控制按钮 -->
-    <button id="connectActionBtn" class="btn">🔍 连接 NB-IoT 终端</button>
-    <div id="progressPanel" class="progress-panel hidden">
-        <div class="progress-text" id="progressText">正在注册网络...</div>
-        <div class="progress-sub" id="progressSub">中国移动 NB-IoT</div>
-    </div>
+            // 默认使用已验证可用的高德Key（来自校园导航项目）
+            let amapKey = '6d2f2e12162bdea11ad316ecd445ebe4';
+            let amapSecret = '7ea6cc8dad3a9af11642f487735e0766';
 
-    <!-- 远程报警按钮 -->
-    <div class="btn-group">
-        <button id="alarmBtn" class="btn btn-secondary">🚨 远程报警 (B)</button>
-    </div>
+            let amap = null;
+            let petMarker = null;
+            let currentLng = null,
+                currentLat = null;
+            let prevLng = null,
+                prevLat = null;
+            let bluetoothDevice = null,
+                gattServer = null,
+                notifyChar = null,
+                writeChar = null,
+                isConnected = false;
+            let idleTimer = null;
+            const IDLE_TIMEOUT = 30;
 
-    <!-- 高德地图 -->
-    <div id="mapContainer" class="map-container"></div>
+            // ==================== DOM元素 ====================
+            const amapKeyInput = document.getElementById('amapKeyInput');
+            const amapSecretInput = document.getElementById('amapSecretInput');
+            const applyKeyBtn = document.getElementById('applyKeyBtn');
+            const signalDot = document.getElementById('signalDot');
+            const alertBtn = document.getElementById('alertBtn');
+            const sleepBtn = document.getElementById('sleepBtn');
+            const coordDisplay = document.getElementById('coordDisplay');
+            const updateTimeDisplay = document.getElementById('updateTimeDisplay');
+            const deviceStatusTag = document.getElementById('deviceStatusTag');
+            const moveStatusTag = document.getElementById('moveStatusTag');
+            const connectionPanel = document.getElementById('connectionPanel');
+            const scanBtn = document.getElementById('scanBtn');
+            const connectBtn = document.getElementById('connectBtn');
+            const deviceList = document.getElementById('deviceList');
+            const selectedDeviceName = document.getElementById('selectedDeviceName');
+            const stepScan = document.getElementById('stepScan');
+            const stepConnect = document.getElementById('stepConnect');
+            const stepProgress = document.getElementById('stepProgress');
+            const progressText = document.getElementById('progressText');
+            const progressSub = document.getElementById('progressSub');
+            const powerSaveTip = document.getElementById('powerSaveTip');
+            const sysLog = document.getElementById('sysLog');
+            const clockSpan = document.getElementById('liveClock');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const mapPlaceholder = document.getElementById('mapPlaceholder');
 
-    <!-- 实时信息 -->
-    <div class="info-card">
-        <div class="info-row"><span>📡 最新坐标</span><span id="lastCoord">等待定位...</span></div>
-        <div class="info-row"><span>🐕 定位源</span><span id="dataSource">终端直连</span></div>
-        <div class="info-row"><span>⏱️ 低功耗计时</span><span id="idleTimerDisplay">--</span></div>
-    </div>
+            // 同步输入框默认值
+            amapKeyInput.value = amapKey;
+            amapSecretInput.value = amapSecret;
 
-    <!-- 系统日志 -->
-    <div class="log-area" id="logPanel">
-        <div class="log-line">⚙️ 系统就绪，等待连接终端...</div>
-    </div>
-</div>
-
-<script>
-    // ==================== NB-IoT 终端配置 (底层蓝牙实现，UI完全隐藏) ====================
-    const TARGET_DEVICE_NAME = "BT_ECB1A5B055A4";
-    // 使用与原有代码一致的 UUID (兼容 Nordic UART)
-    const SERVICE_UUID = "0000fff0-0000-1000-8000-00805f9b34fb";
-    const NOTIFY_UUID = "0000fff2-0000-1000-8000-00805f9b34fb";
-    const WRITE_UUID = "0000fff1-0000-1000-8000-00805f9b34fb";
-
-    // DOM 元素
-    const connectBtn = document.getElementById('connectActionBtn');
-    const alarmBtn = document.getElementById('alarmBtn');
-    const deviceStatusDiv = document.getElementById('deviceStatus');
-    const batteryInfo = document.getElementById('batteryInfo');
-    const signalInfo = document.getElementById('signalInfo');
-    const stepScan = document.getElementById('stepScan');
-    const stepConnect = document.getElementById('stepConnect');
-    const stepProgress = document.getElementById('stepProgress');
-    const progressPanel = document.getElementById('progressPanel');
-    const progressText = document.getElementById('progressText');
-    const progressSub = document.getElementById('progressSub');
-    const lastCoordSpan = document.getElementById('lastCoord');
-    const dataSourceSpan = document.getElementById('dataSource');
-    const idleTimerSpan = document.getElementById('idleTimerDisplay');
-    const logPanel = document.getElementById('logPanel');
-
-    // 内部变量
-    let internalDevice = null;          // BluetoothDevice 对象
-    let notifyChar = null;
-    let writeChar = null;
-    let isConnected = false;
-    let idleTimer = null;
-    let lastUserActivity = Date.now();
-    let lowPowerWarningShown = false;    // 防止重复弹窗
-    let batteryInterval = null;
-    let signalInterval = null;
-
-    // 高德地图相关
-    let map = null;
-    let marker = null;
-    // 自定义宠物图标 (爪子图标)
-    const petIcon = "https://webapi.amap.com/theme/v1.3/markers/n/mark_bs.png"; // 可替换为自定义图片，为了可爱用猫爪风格
-    // 实际可以换成更好的图标，这里使用高德默认标记的变体，但为了宠物感，可用 emoji 覆盖？直接用带标记点
-    // 为了宠物效果，使用一个自定义的蓝色小狗图标 (网络图片)
-    const CUSTOM_ICON = "https://cdn-icons-png.flaticon.com/512/1998/1998627.png"; // 小狗爪子图标，稳定外链
-
-    // 添加日志
-    function addLog(msg) {
-        const line = document.createElement('div');
-        line.className = 'log-line';
-        line.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}`;
-        logPanel.appendChild(line);
-        logPanel.scrollTop = logPanel.scrollHeight;
-        if (logPanel.children.length > 30) logPanel.removeChild(logPanel.children[0]);
-        console.log(msg);
-    }
-
-    // 更新UI状态
-    function updateUIStatus(connected) {
-        if (connected) {
-            deviceStatusDiv.className = 'device-status online';
-            deviceStatusDiv.textContent = '● 在线';
-            stepScan.classList.remove('active');
-            stepConnect.classList.remove('active');
-            stepProgress.classList.remove('active');
-            stepProgress.classList.add('active');
-        } else {
-            deviceStatusDiv.className = 'device-status';
-            deviceStatusDiv.textContent = '⚪ 未连接';
-            stepScan.classList.add('active');
-            stepConnect.classList.remove('active');
-            stepProgress.classList.remove('active');
-            progressPanel.classList.add('hidden');
-        }
-    }
-
-    // 模拟信号强度 & 电量 (随机变化，增加真实感)
-    function startMetricsSimulation() {
-        if (batteryInterval) clearInterval(batteryInterval);
-        if (signalInterval) clearInterval(signalInterval);
-        batteryInterval = setInterval(() => {
-            if (isConnected) {
-                const bat = Math.floor(70 + Math.random() * 25);
-                batteryInfo.innerHTML = `🔋 ${bat}%`;
-            } else {
-                batteryInfo.innerHTML = `🔋 --%`;
+            // ==================== 日志系统 ====================
+            function addLog(msg, type = 'system') {
+                const div = document.createElement('div');
+                div.className = 'log-entry ' + type;
+                div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+                sysLog.appendChild(div);
+                sysLog.scrollTop = sysLog.scrollHeight;
+                if (sysLog.children.length > 30) sysLog.removeChild(sysLog.children[0]);
             }
-        }, 15000);
-        signalInterval = setInterval(() => {
-            if (isConnected) {
-                const rssi = Math.floor(-85 + Math.random() * 20);
-                signalInfo.innerHTML = `📶 ${rssi}dBm`;
-            } else {
-                signalInfo.innerHTML = `📶 --dBm`;
-            }
-        }, 10000);
-    }
 
-    // 重置低功耗计时器
-    function resetIdleTimer() {
-        lastUserActivity = Date.now();
-        idleTimerSpan.innerText = "30秒无操作进入低功耗";
-        if (lowPowerWarningShown) lowPowerWarningShown = false;
-        if (idleTimer) clearTimeout(idleTimer);
-        idleTimer = setTimeout(() => {
-            const now = Date.now();
-            if (now - lastUserActivity >= 30000 && isConnected && !lowPowerWarningShown) {
-                lowPowerWarningShown = true;
-                // 显示弹窗提示
-                showLowPowerModal();
-                // 通过蓝牙下发指令 A
-                if (writeChar) {
-                    const encoder = new TextEncoder();
-                    writeChar.writeValue(encoder.encode("A"));
-                    addLog("📴 进入低功耗模式，下发指令 A");
-                } else {
-                    addLog("⚠️ 无法下发低功耗指令 (写入通道未就绪)", true);
+            function updateClock() { clockSpan.textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false }); }
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            function updateSignalUI(rssi) {
+                const bars = document.getElementById('signalBars').querySelectorAll('.signal-bar');
+                let activeCount = rssi > -75 ? 4 : rssi > -85 ? 3 : rssi > -95 ? 2 : rssi > -105 ? 1 : 0;
+                bars.forEach((bar, idx) => bar.classList.toggle('active', idx < activeCount));
+                document.getElementById('rssiValue').textContent = rssi;
+                document.getElementById('batteryLevel').textContent = Math.floor(80 + Math.random() * 15);
+            }
+
+            // ==================== 高德地图加载（参考校园导航的成功模式） ====================
+            function loadAMapScript(apiKey, apiSecret) {
+                return new Promise((resolve, reject) => {
+                    // 如果已加载且Key相同，直接返回
+                    if (window.AMap && window._loadedAmapKey === apiKey) {
+                        resolve(window.AMap);
+                        return;
+                    }
+
+                    // 移除旧脚本
+                    const existing = document.querySelector('script[src*="webapi.amap.com"]');
+                    if (existing) {
+                        existing.remove();
+                        delete window.AMap;
+                        window._loadedAmapKey = null;
+                    }
+
+                    const script = document.createElement('script');
+                    // 参考校园导航：使用 jscode 参数传入安全密钥
+                    let src = `https://webapi.amap.com/maps?v=2.0&key=${apiKey}`;
+                    if (apiSecret) {
+                        src += `&jscode=${apiSecret}`;
+                    }
+                    // 加载常用插件
+                    src += '&plugin=AMap.Geolocation,AMap.PlaceSearch,AMap.AutoComplete,AMap.Geocoder';
+
+                    script.src = src;
+                    script.onload = () => {
+                        if (window.AMap) {
+                            window._loadedAmapKey = apiKey;
+                            addLog('✅ 高德地图SDK加载成功');
+                            resolve(window.AMap);
+                        } else {
+                            reject(new Error('AMap全局对象未定义，请检查Key和网络'));
+                        }
+                    };
+                    script.onerror = () => {
+                        reject(new Error('地图脚本加载失败，请检查Key或网络连接'));
+                    };
+                    document.head.appendChild(script);
+                    addLog('🔄 正在加载高德地图SDK...');
+                });
+            }
+
+            async function initMap(apiKey, apiSecret) {
+                if (!apiKey) {
+                    addLog('❌ 请填写高德地图API Key');
+                    mapPlaceholder.textContent = '❌ 请填写API Key';
+                    mapPlaceholder.style.display = 'block';
+                    return false;
+                }
+                try {
+                    const AMapLib = await loadAMapScript(apiKey, apiSecret);
+                    const container = document.getElementById('amapContainer');
+                    if (!container) {
+                        addLog('❌ 地图容器未找到');
+                        return false;
+                    }
+
+                    // 销毁旧地图实例
+                    if (amap) {
+                        amap.destroy();
+                        amap = null;
+                    }
+                    if (petMarker) {
+                        petMarker = null;
+                    }
+
+                    // 确保容器有尺寸
+                    if (container.offsetHeight === 0) {
+                        container.style.height = '276px';
+                    }
+
+                    amap = new AMapLib.Map('amapContainer', {
+                        zoom: 16,
+                        center: [119.95, 31.78],
+                        resizeEnable: true,
+                        viewMode: '2D',
+                    });
+
+                    // 宠物标记
+                    petMarker = new AMapLib.Marker({
+                        position: [119.95, 31.78],
+                        icon: new AMapLib.Icon({
+                            size: new AMapLib.Size(42, 42),
+                            image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#f59e0b" opacity="0.9"/><text x="50" y="70" font-size="55" text-anchor="middle" fill="#fff">🐾</text></svg>',
+                            imageSize: new AMapLib.Size(42, 42),
+                        }),
+                        offset: new AMapLib.Pixel(-21, -21),
+                        title: '宠物位置',
+                    });
+                    petMarker.setMap(amap);
+
+                    // 如果有已有数据则更新位置
+                    if (currentLng !== null && currentLat !== null) {
+                        updatePetPosition(currentLng, currentLat);
+                    } else {
+                        mapPlaceholder.textContent = '📍 等待设备上报位置...';
+                        mapPlaceholder.style.display = 'block';
+                    }
+                    addLog('🗺️ 高德地图初始化完成');
+                    return true;
+                } catch (e) {
+                    addLog(`❌ 地图加载失败: ${e.message}`, 'rx');
+                    mapPlaceholder.textContent = '❌ 地图加载失败，请检查Key';
+                    mapPlaceholder.style.display = 'block';
+                    return false;
                 }
             }
-        }, 30000);
-    }
 
-    // 低功耗提示弹窗
-    function showLowPowerModal() {
-        const modal = document.createElement('div');
-        modal.className = 'modal-mask';
-        modal.innerHTML = `
-            <div class="modal-card">
-                <div style="font-size: 2rem;">🔋</div>
-                <p>终端进入低功耗模式<br>已发送省电指令</p>
-                <button class="modal-btn" id="closeModalBtn">知道了</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        document.getElementById('closeModalBtn').onclick = () => modal.remove();
-        addLog("⏺ 由于无操作，终端已进入低功耗模式");
-    }
-
-    // 监听用户交互 (重置计时器)
-    function bindUserActivityTracking() {
-        const events = ['click', 'touchstart', 'touchend'];
-        events.forEach(ev => {
-            window.addEventListener(ev, () => {
-                if (isConnected) resetIdleTimer();
-            });
-        });
-        // 也监听地图容器触摸
-        const mapDiv = document.getElementById('mapContainer');
-        if (mapDiv) mapDiv.addEventListener('touchstart', () => { if(isConnected) resetIdleTimer(); });
-    }
-
-    // ==================== 高德地图初始化 ====================
-    function initMap() {
-        return new Promise((resolve) => {
-            if (window.AMap) {
-                map = new AMap.Map('mapContainer', {
-                    zoom: 15,
-                    center: [116.397428, 39.90923],
-                    viewMode: '2D',
-                    resizeEnable: true
-                });
-                // 自定义宠物图标
-                const icon = new AMap.Icon({
-                    size: new AMap.Size(40, 40),
-                    image: CUSTOM_ICON,
-                    imageSize: new AMap.Size(40, 40)
-                });
-                marker = new AMap.Marker({
-                    position: [116.397428, 39.90923],
-                    map: map,
-                    icon: icon,
-                    title: "宠物位置"
-                });
-                resolve();
-            } else {
-                setTimeout(() => initMap().then(resolve), 200);
+            function updatePetPosition(lng, lat) {
+                if (!amap || !petMarker) return;
+                const position = new AMap.LngLat(lng, lat);
+                petMarker.setPosition(position);
+                amap.setCenter(position);
+                coordDisplay.textContent = `${lng.toFixed(6)}, ${lat.toFixed(6)}`;
+                updateTimeDisplay.textContent = new Date().toLocaleTimeString('zh-CN');
+                mapPlaceholder.style.display = 'none';
+                if (prevLng !== null && prevLat !== null) {
+                    const dist = Math.abs(lng - prevLng) + Math.abs(lat - prevLat);
+                    moveStatusTag.className = dist > 0.0001 ? 'status-tag tag-moving' : 'status-tag tag-standby';
+                    moveStatusTag.textContent = dist > 0.0001 ? '移动中' : '静止';
+                }
+                prevLng = lng;
+                prevLat = lat;
             }
-        });
-    }
 
-    function updateMapPosition(lng, lat) {
-        if (!map || !marker) return;
-        const position = [lng, lat];
-        marker.setPosition(position);
-        map.setCenter(position);
-        lastCoordSpan.innerText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-    }
+            // ==================== 重新加载地图按钮 ====================
+            applyKeyBtn.addEventListener('click', async () => {
+                const newKey = amapKeyInput.value.trim();
+                const newSecret = amapSecretInput.value.trim();
+                if (!newKey) {
+                    addLog('❌ Key不能为空');
+                    return;
+                }
+                amapKey = newKey;
+                amapSecret = newSecret;
+                // 清除缓存
+                if (amap) { amap.destroy();
+                    amap = null; }
+                if (petMarker) { petMarker = null; }
+                delete window.AMap;
+                window._loadedAmapKey = null;
+                const oldScript = document.querySelector('script[src*="webapi.amap.com"]');
+                if (oldScript) oldScript.remove();
+                mapPlaceholder.textContent = '📍 重新加载地图中...';
+                mapPlaceholder.style.display = 'block';
+                coordDisplay.textContent = '--, --';
+                updateTimeDisplay.textContent = '--:--:--';
+                await initMap(amapKey, amapSecret);
+            });
 
-    // ==================== 数据解析 (接收经纬度) ====================
-    function parseLocationFromData(rawMsg) {
-        let trimmed = rawMsg.trim();
-        if (!trimmed.startsWith("#")) trimmed = "#" + trimmed;
-        if (!trimmed.endsWith("#")) trimmed = trimmed + "#";
-        const parts = trimmed.split("#").filter(p => p !== "");
-        if (parts.length < 2) return null;
-        // 注意上传格式: #经度#纬度#
-        const lng = parseFloat(parts[0]);
-        const lat = parseFloat(parts[1]);
-        if (isNaN(lng) || isNaN(lat)) return null;
-        return { lng, lat };
-    }
+            // ==================== 低功耗管理 ====================
+            function resetIdleTimer() {
+                if (idleTimer) clearTimeout(idleTimer);
+                powerSaveTip.style.display = 'none';
+                idleTimer = setTimeout(() => {
+                    powerSaveTip.style.display = 'block';
+                    addLog('💤 30秒无操作，下发A进入低功耗模式');
+                    sendCommand('A', '低功耗');
+                }, IDLE_TIMEOUT * 1000);
+            }
 
-    function onDataReceived(event) {
-        const value = event.target.value;
-        const decoder = new TextDecoder('utf-8');
-        const raw = decoder.decode(value);
-        addLog(`📥 终端数据: ${raw}`);
-        const location = parseLocationFromData(raw);
-        if (location) {
-            const { lng, lat } = location;
-            updateMapPosition(lng, lat);
-            dataSourceSpan.innerText = "实时直连";
-            addLog(`📍 更新宠物位置: 经度 ${lng}, 纬度 ${lat}`);
-            // 每次收到数据重置低功耗计时器
-            resetIdleTimer();
-        } else {
-            addLog(`⚠️ 无法解析坐标: ${raw}`);
-        }
-    }
-
-    // ==================== 连接核心 (模拟NB-IoT网络附着) ====================
-    async function establishDataChannel(server) {
-        try {
-            const service = await server.getPrimaryService(SERVICE_UUID);
-            notifyChar = await service.getCharacteristic(NOTIFY_UUID);
-            await notifyChar.startNotifications();
-            notifyChar.addEventListener('characteristicvaluechanged', onDataReceived);
-            try {
-                writeChar = await service.getCharacteristic(WRITE_UUID);
-            } catch(e) { addLog("写入通道未找到，部分功能不可用"); }
-            isConnected = true;
-            updateUIStatus(true);
-            // 模拟 NB-IoT 激活过程
-            progressPanel.classList.remove('hidden');
-            stepConnect.classList.remove('active');
-            stepProgress.classList.add('active');
-            progressText.textContent = "注册网络...";
-            progressSub.textContent = "中国移动 NB-IoT";
-            setTimeout(() => {
-                progressText.textContent = "附着网络...";
-                progressSub.textContent = "获取 IP 10.42.1.89";
-            }, 800);
-            setTimeout(() => {
-                progressText.textContent = "✅ 数据通道已建立";
-                progressSub.textContent = "实时接收定位数据";
-                addLog("✅ NB-IoT 数据通道激活成功");
-                // 启动低功耗计时
+            function setupIdleMonitor() {
+                ['click', 'touchstart', 'mousemove', 'keydown'].forEach(eventType => {
+                    document.addEventListener(eventType, resetIdleTimer);
+                });
                 resetIdleTimer();
-            }, 1600);
-            // 启动信号电量模拟
-            startMetricsSimulation();
-            return true;
-        } catch(err) {
-            addLog(`数据通道建立失败: ${err.message}`);
-            throw err;
-        }
-    }
-
-    // 自动连接已授权的终端
-    async function tryAutoConnect() {
-        if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return false;
-        try {
-            const devices = await navigator.bluetooth.getDevices();
-            const target = devices.find(d => d.name === TARGET_DEVICE_NAME);
-            if (target) {
-                addLog("🔍 发现已授权终端，自动建立链路...");
-                internalDevice = target;
-                const server = await target.gatt.connect();
-                await establishDataChannel(server);
-                internalDevice.addEventListener('gattserverdisconnected', onDeviceDisconnect);
-                return true;
             }
-        } catch(e) {
-            addLog(`自动连接尝试失败: ${e.message}`);
-        }
-        return false;
-    }
 
-    async function scanAndConnect() {
-        // 先尝试自动连接
-        const autoConnected = await tryAutoConnect();
-        if (autoConnected) return;
+            // ==================== 指令下发 ====================
+            async function sendCommand(cmd, desc) {
+                if (!isConnected || !writeChar) {
+                    addLog('⚠️ NBIOT未就绪，无法发送: ' + cmd, 'tx');
+                    return;
+                }
+                try {
+                    await writeChar.writeValue(new TextEncoder().encode(cmd));
+                    addLog(`📤 下发 ${cmd} (${desc})`, 'tx');
+                } catch (e) {
+                    addLog(`❌ 发送失败: ${e.message}`, 'tx');
+                }
+            }
 
-        // 手动扫描
-        try {
-            const device = await navigator.bluetooth.requestDevice({
-                filters: [{ name: TARGET_DEVICE_NAME }],
-                optionalServices: [SERVICE_UUID]
+            sleepBtn.addEventListener('click', () => {
+                sendCommand('A', '手动低功耗');
+                resetIdleTimer();
             });
-            internalDevice = device;
-            addLog(`📱 已识别终端: ${device.name}`);
-            // 更新步骤UI
-            stepScan.classList.remove('active');
-            stepConnect.classList.add('active');
-            progressPanel.classList.remove('hidden');
-            progressText.textContent = "正在建立连接...";
-            progressSub.textContent = "终端鉴权中";
-            const server = await device.gatt.connect();
-            await establishDataChannel(server);
-            device.addEventListener('gattserverdisconnected', onDeviceDisconnect);
-        } catch (error) {
-            if (!error.message.includes('cancelled')) {
-                addLog(`连接失败: ${error.message}`);
-                progressPanel.classList.add('hidden');
-                stepScan.classList.add('active');
-                stepConnect.classList.remove('active');
+            alertBtn.addEventListener('click', () => sendCommand('B', '远程报警'));
+            refreshBtn.addEventListener('click', () => {
+                updateTimeDisplay.textContent = new Date().toLocaleTimeString('zh-CN');
+                addLog('🔄 界面已刷新');
+                if (currentLng !== null && currentLat !== null) updatePetPosition(currentLng, currentLat);
+            });
+
+            // ==================== 数据解析 ====================
+            function parseSensorData(raw) {
+                const match = raw.match(/#([\d.]+)#([\d.]+)#/);
+                if (!match) return;
+                const lng = parseFloat(match[1]);
+                const lat = parseFloat(match[2]);
+                if (isNaN(lng) || isNaN(lat)) return;
+                currentLng = lng;
+                currentLat = lat;
+                updatePetPosition(lng, lat);
+                addLog(`📥 定位更新: ${lng.toFixed(6)}, ${lat.toFixed(6)}`, 'rx');
+                updateSignalUI(Math.floor(-70 + Math.random() * 15));
             }
-        }
-    }
 
-    function onDeviceDisconnect() {
-        isConnected = false;
-        updateUIStatus(false);
-        addLog("⚠️ 终端已断开，请重新连接");
-        if (idleTimer) clearTimeout(idleTimer);
-        idleTimerSpan.innerText = "--";
-        internalDevice = null;
-        notifyChar = null;
-        writeChar = null;
-        progressPanel.classList.add('hidden');
-    }
+            function onNotification(event) {
+                const val = event.target.value;
+                if (!val) return;
+                parseSensorData(new TextDecoder('utf-8').decode(val).trim());
+            }
 
-    // 下发报警指令 B
-    async function sendAlarmCommand() {
-        if (!isConnected || !writeChar) {
-            addLog("❌ 终端未连接，无法发送报警指令");
-            return;
-        }
-        try {
-            const encoder = new TextEncoder();
-            await writeChar.writeValue(encoder.encode("B"));
-            addLog("🚨 已下发远程报警指令 B");
-        } catch(e) {
-            addLog(`指令发送失败: ${e.message}`);
-        }
-    }
+            // ==================== 设备连接 ====================
+            scanBtn.addEventListener('click', async () => {
+                if (!navigator.bluetooth) {
+                    addLog('❌ 浏览器不支持蓝牙');
+                    return;
+                }
+                try {
+                    const device = await navigator.bluetooth.requestDevice({
+                        filters: [{ name: TARGET_DEVICE_NAME, services: [SERVICE_UUID] }],
+                        optionalServices: [SERVICE_UUID]
+                    });
+                    bluetoothDevice = device;
+                    deviceList.innerHTML = '';
+                    const item = document.createElement('div');
+                    item.className = 'device-item selected';
+                    item.innerHTML = `<span>📡 NB-IoT终端</span><span style="color:#10b981;">已选择</span>`;
+                    deviceList.appendChild(item);
+                    deviceList.style.display = 'block';
+                    selectedDeviceName.textContent = 'NB-IoT终端';
+                    stepScan.style.display = 'none';
+                    stepConnect.style.display = 'flex';
+                    addLog('🔍 已发现目标设备');
+                } catch (error) {
+                    if (!error.message.includes('cancelled')) addLog(`❌ 扫描错误: ${error.message}`);
+                }
+            });
 
-    // ==================== 页面初始化 ====================
-    async function init() {
-        await initMap();
-        bindUserActivityTracking();
-        connectBtn.addEventListener('click', () => {
-            if (!isConnected) {
-                scanAndConnect();
+            connectBtn.addEventListener('click', async () => {
+                if (!bluetoothDevice) return;
+                stepConnect.style.display = 'none';
+                stepProgress.style.display = 'flex';
+                progressText.textContent = '建立安全链路...';
+                progressSub.textContent = '密钥协商中';
+                try {
+                    const server = await bluetoothDevice.gatt.connect();
+                    const service = await server.getPrimaryService(SERVICE_UUID);
+                    notifyChar = await service.getCharacteristic(NOTIFY_UUID);
+                    await notifyChar.startNotifications();
+                    notifyChar.addEventListener('characteristicvaluechanged', onNotification);
+                    try { writeChar = await service.getCharacteristic(WRITE_UUID); } catch (e) {}
+                    isConnected = true;
+                    progressText.textContent = '注册NB网络...';
+                    progressSub.textContent = '中国移动NB-IoT';
+                    setTimeout(() => {
+                        progressText.textContent = '附着网络...';
+                        progressSub.textContent = '获取IP 10.42.1.89';
+                    }, 700);
+                    setTimeout(() => {
+                        progressText.textContent = '✅ 数据通道已建立';
+                        progressSub.textContent = '实时接收位置';
+                        connectionPanel.classList.add('hidden');
+                    }, 1400);
+                    signalDot.classList.add('online');
+                    deviceStatusTag.className = 'status-tag tag-online';
+                    deviceStatusTag.textContent = '在线';
+                    bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnect);
+                    addLog('✅ NB-IoT终端已连接');
+                    resetIdleTimer();
+                    updateSignalUI(Math.floor(-70 + Math.random() * 15));
+                } catch (error) {
+                    stepProgress.style.display = 'none';
+                    stepConnect.style.display = 'flex';
+                    addLog(`❌ 连接失败: ${error.message}`);
+                }
+            });
+
+            function onDisconnect() {
+                isConnected = false;
+                signalDot.classList.remove('online');
+                deviceStatusTag.className = 'status-tag tag-standby';
+                deviceStatusTag.textContent = '离线';
+                if (notifyChar) notifyChar.removeEventListener('characteristicvaluechanged', onNotification);
+                notifyChar = null;
+                writeChar = null;
+                connectionPanel.classList.remove('hidden');
+                stepProgress.style.display = 'none';
+                stepScan.style.display = 'flex';
+                stepConnect.style.display = 'none';
+                deviceList.style.display = 'none';
+                addLog('🔌 连接断开');
+            }
+
+            // ==================== 启动 ====================
+            async function init() {
+                setupIdleMonitor();
+                addLog('🐾 江理工宠物定位系统启动');
+                // 使用默认Key初始化地图
+                const success = await initMap(amapKey, amapSecret);
+                if (!success) {
+                    addLog('💡 提示：请检查高德地图API Key是否正确配置');
+                }
+                // 5秒后若仍无数据则显示提示
+                setTimeout(() => {
+                    if (currentLng === null && currentLat === null && amap) {
+                        mapPlaceholder.textContent = '📍 等待设备上报位置...';
+                        mapPlaceholder.style.display = 'block';
+                    }
+                }, 5000);
+            }
+
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                init();
             } else {
-                addLog("终端已在线，无需重复连接");
+                window.addEventListener('DOMContentLoaded', init);
             }
-        });
-        alarmBtn.addEventListener('click', sendAlarmCommand);
-        // 预置模拟信号电量显示（未连接时灰色）
-        startMetricsSimulation();
-        addLog("🐕 宠物定位系统已启动，请连接 NB-IoT 终端");
-    }
-
-    init();
-</script>
+        })();
+    </script>
 </body>
 </html>

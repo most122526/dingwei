@@ -499,7 +499,6 @@
             const NOTIFY_UUID = '0000fff1-0000-1000-8000-00805f9b34fb';
             const WRITE_UUID = '0000fff1-0000-1000-8000-00805f9b34fb';
 
-            // 默认使用已验证可用的高德Key（来自校园导航项目）
             let amapKey = '6d2f2e12162bdea11ad316ecd445ebe4';
             let amapSecret = '7ea6cc8dad3a9af11642f487735e0766';
 
@@ -544,9 +543,34 @@
             const refreshBtn = document.getElementById('refreshBtn');
             const mapPlaceholder = document.getElementById('mapPlaceholder');
 
-            // 同步输入框默认值
             amapKeyInput.value = amapKey;
             amapSecretInput.value = amapSecret;
+
+            // ==================== 小狗头像图标（纯矢量SVG → base64） ====================
+            function createDogIconDataUri() {
+                const dogSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+              <defs>
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#00000055"/>
+                </filter>
+              </defs>
+              <circle cx="50" cy="56" r="38" fill="#F5A623" stroke="#E8910A" stroke-width="2.5" filter="url(#shadow)"/>
+              <ellipse cx="26" cy="26" rx="13" ry="17" fill="#D97706" stroke="#B45309" stroke-width="1.5"/>
+              <ellipse cx="26" cy="29" rx="9" ry="12" fill="#FCD34D"/>
+              <ellipse cx="74" cy="26" rx="13" ry="17" fill="#D97706" stroke="#B45309" stroke-width="1.5"/>
+              <ellipse cx="74" cy="29" rx="9" ry="12" fill="#FCD34D"/>
+              <circle cx="37" cy="50" r="6" fill="#3D3226"/>
+              <circle cx="63" cy="50" r="6" fill="#3D3226"/>
+              <circle cx="39" cy="48" r="2.2" fill="white"/>
+              <circle cx="65" cy="48" r="2.2" fill="white"/>
+              <ellipse cx="50" cy="63" rx="8" ry="6" fill="#3D3226"/>
+              <ellipse cx="50" cy="61" rx="3" ry="2" fill="#6B5B4F"/>
+              <path d="M43 71 Q50 79 57 71" fill="none" stroke="#3D3226" stroke-width="2.8" stroke-linecap="round"/>
+              <ellipse cx="50" cy="77" rx="5" ry="6" fill="#F472B6" opacity="0.85"/>
+              <ellipse cx="50" cy="76" rx="2.5" ry="3" fill="#F9A8D4"/>
+            </svg>`;
+                return 'data:image/svg+xml;base64,' + btoa(dogSvg);
+            }
 
             // ==================== 日志系统 ====================
             function addLog(msg, type = 'system') {
@@ -570,32 +594,25 @@
                 document.getElementById('batteryLevel').textContent = Math.floor(80 + Math.random() * 15);
             }
 
-            // ==================== 高德地图加载（参考校园导航的成功模式） ====================
+            // ==================== 高德地图加载 ====================
             function loadAMapScript(apiKey, apiSecret) {
                 return new Promise((resolve, reject) => {
-                    // 如果已加载且Key相同，直接返回
                     if (window.AMap && window._loadedAmapKey === apiKey) {
                         resolve(window.AMap);
                         return;
                     }
-
-                    // 移除旧脚本
                     const existing = document.querySelector('script[src*="webapi.amap.com"]');
                     if (existing) {
                         existing.remove();
                         delete window.AMap;
                         window._loadedAmapKey = null;
                     }
-
                     const script = document.createElement('script');
-                    // 参考校园导航：使用 jscode 参数传入安全密钥
                     let src = `https://webapi.amap.com/maps?v=2.0&key=${apiKey}`;
                     if (apiSecret) {
                         src += `&jscode=${apiSecret}`;
                     }
-                    // 加载常用插件
                     src += '&plugin=AMap.Geolocation,AMap.PlaceSearch,AMap.AutoComplete,AMap.Geocoder';
-
                     script.src = src;
                     script.onload = () => {
                         if (window.AMap) {
@@ -628,8 +645,6 @@
                         addLog('❌ 地图容器未找到');
                         return false;
                     }
-
-                    // 销毁旧地图实例
                     if (amap) {
                         amap.destroy();
                         amap = null;
@@ -637,12 +652,9 @@
                     if (petMarker) {
                         petMarker = null;
                     }
-
-                    // 确保容器有尺寸
                     if (container.offsetHeight === 0) {
                         container.style.height = '276px';
                     }
-
                     amap = new AMapLib.Map('amapContainer', {
                         zoom: 16,
                         center: [119.95, 31.78],
@@ -650,20 +662,21 @@
                         viewMode: '2D',
                     });
 
-                    // 宠物标记
+                    // ✅ 使用小狗头像图标（base64编码的纯矢量SVG，无emoji依赖）
+                    const dogIconUri = createDogIconDataUri();
                     petMarker = new AMapLib.Marker({
                         position: [119.95, 31.78],
                         icon: new AMapLib.Icon({
-                            size: new AMapLib.Size(42, 42),
-                            image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#f59e0b" opacity="0.9"/><text x="50" y="70" font-size="55" text-anchor="middle" fill="#fff">🐾</text></svg>',
-                            imageSize: new AMapLib.Size(42, 42),
+                            size: new AMapLib.Size(52, 52),
+                            image: dogIconUri,
+                            imageSize: new AMapLib.Size(52, 52),
                         }),
-                        offset: new AMapLib.Pixel(-21, -21),
-                        title: '宠物位置',
+                        offset: new AMapLib.Pixel(-26, -26),
+                        title: '🐕 宠物位置',
+                        zIndex: 100,
                     });
                     petMarker.setMap(amap);
 
-                    // 如果有已有数据则更新位置
                     if (currentLng !== null && currentLat !== null) {
                         updatePetPosition(currentLng, currentLat);
                     } else {
@@ -707,7 +720,6 @@
                 }
                 amapKey = newKey;
                 amapSecret = newSecret;
-                // 清除缓存
                 if (amap) { amap.destroy();
                     amap = null; }
                 if (petMarker) { petMarker = null; }
@@ -871,12 +883,10 @@
             async function init() {
                 setupIdleMonitor();
                 addLog('🐾 江理工宠物定位系统启动');
-                // 使用默认Key初始化地图
                 const success = await initMap(amapKey, amapSecret);
                 if (!success) {
                     addLog('💡 提示：请检查高德地图API Key是否正确配置');
                 }
-                // 5秒后若仍无数据则显示提示
                 setTimeout(() => {
                     if (currentLng === null && currentLat === null && amap) {
                         mapPlaceholder.textContent = '📍 等待设备上报位置...';
